@@ -6,8 +6,7 @@ if __name__ == '__main__':
     name = './vm_snapshots/'
     files = [name+'sim_0_3_512_256.dat', name+'sim_1_5_1024_256.dat', name+'sim_2_5_1024_512.dat', name+'sim_3_5_1024_768.dat', name+'sim_4_10_1024_256.dat', name+'sim_5_10_1024_512.dat']
 
-    #PCB[0] = name, PCB[1] = last access, PCB[2] = access count
-    memoryInfo = ['',0, 0]
+    
 
     '''print("0: sim_0_3_512_256.dat")
     print('1: sim_1_5_1024_256.dat')
@@ -28,7 +27,8 @@ if __name__ == '__main__':
     pmTable = {}
 
     for x in range(int(pm)):
-        pmTable[str(x)] = memoryInfo
+        #[0] = name, [1] = last access, [2] = access count
+        pmTable[str(x)] = ['', 0, 1]
 
     inputFile = inputFile.read()
     inputFile = inputFile.split(' ')
@@ -51,43 +51,66 @@ if __name__ == '__main__':
         for line in inputFile:
                 process, location = line.split(',')
                 location = location.strip('0x')
-
-                found = False
+                
+                found = False 
 
                 for k in pmTable:
                     if pmTable[k][0] == location:
                         found = True
-                    elif int(k) == int(pm) - 1 and not found:
-                        pmTable[str(FIFO)][0] = location
-                        print(line + ' = ' + 'Process ' + process + ' accesses line ' + str(FIFO))
-                        page_fault += 1
-                        if FIFO < int(pm) - 1:
-                            FIFO += 1
-                        else:
-                            FIFO = 0
+
+                if not found:
+                    pmTable[str(FIFO)][0] = location
+                    print(line + ' = ' + 'Process ' + process + ' accesses line ' + str(FIFO))
+                    page_fault += 1
+                    if FIFO < int(pm) - 1:
+                        FIFO += 1
+                    else:
+                        FIFO = 0
+
     if token == '1':
+        initialize = -1
         for line in inputFile:
             process, location = line.split(',')
             location = location.strip('0x')
-            found = False
+            
 
+            found = False
             for k in pmTable:
                 if pmTable[k][0] == location:
+                    found = True
+
+            if not found:
+                initialize += 1
+
+            found = False
+            
+            for k in pmTable:
+                if pmTable[k][0] == location and not found:
                     pmTable[k][2] += 1
                     found = True
-                elif int(k) == int(pm) - 1 and not found and pmTable[k][0] != '':
+                elif int(k) == int(pm) - 1 and not found and initialize >= int(pm):
                     leastUsedNum = sys.maxsize
                     leastUsedK = ''
                     for key in pmTable:
                         if pmTable[key][2] < leastUsedNum:
                             leastUsedNum = pmTable[key][2]
                             leastUsedK = key
-
-                    #print(line + ' = ' + 'Process ' + process + ' accesses line ' + leastUsedK)
+                    print(line + ' = ' + 'Process ' + process + ' accesses line ' + leastUsedK)
                     pmTable[leastUsedK][0] = location
-                    pmTable[leastUsedK][2] = 0
-            
-                    
+                    pmTable[leastUsedK][2] = 1
+                    found = True
+                elif initialize < int(pm) and not found:
+                    pmTable[str(initialize)][0] = location
+                    print(line + ' = ' + 'Process ' + process + ' accesses line ' + str(initialize))
+                    found = True
+
+    if token == '2':
+        for line in inputFile:
+            process, location = line.split(',')
+            location = location.strip('0x')
+
+
+
 
 
 
